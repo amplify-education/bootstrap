@@ -130,6 +130,23 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
               tooltip.css( ttPosition );
             };
 
+            var debounce = function(func, wait) {
+              var timeout;
+              return function() {
+                var _this = this, args = arguments;
+                if (!timeout) {
+                  timeout = setTimeout(function(){
+                    func.apply(_this, args);
+                    timeout = null;
+                  }, wait);
+                }
+              }
+            };
+
+            var repositionOnResize = function () {
+              window.addEventListener('resize', debounce(positionTooltip, 250));
+            };
+
             // By default, the tooltip is not open.
             // TODO add ability to start tooltip opened
             ttScope.isOpen = false;
@@ -200,6 +217,9 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
 
               positionTooltip();
 
+              // Add resize handler if attr is specified
+              if (tAttrs.tooltipResize) repositionOnResize();
+
               // And show the tooltip.
               ttScope.isOpen = true;
               ttScope.$digest(); // digest required as $apply is not called
@@ -266,7 +286,7 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
                 hide();
               }
             });
-            
+
             attrs.$observe( 'disabled', function ( val ) {
               if (val && ttScope.isOpen ) {
                 hide();
