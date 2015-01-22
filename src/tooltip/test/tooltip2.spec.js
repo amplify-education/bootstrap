@@ -1,14 +1,15 @@
 describe('tooltip directive', function () {
 
-  var $rootScope, $compile, $document, $timeout;
+  var $rootScope, $compile, $document, $timeout, $window;
 
   beforeEach(module('ui.bootstrap.tooltip'));
   beforeEach(module('template/tooltip/tooltip-popup.html'));
-  beforeEach(inject(function (_$rootScope_, _$compile_, _$document_, _$timeout_) {
+  beforeEach(inject(function (_$rootScope_, _$compile_, _$document_, _$timeout_, _$window_) {
     $rootScope = _$rootScope_;
     $compile = _$compile_;
     $document = _$document_;
     $timeout = _$timeout_;
+    $window = _$window_;
   }));
 
   beforeEach(function(){
@@ -97,6 +98,26 @@ describe('tooltip directive', function () {
 
         closeTooltip(fragment.find('span'));
         expect(fragment).not.toHaveOpenTooltips();
+      });
+
+    });
+
+    describe('resize', function() {
+
+      beforeEach(function () {
+        spyOn($window, 'addEventListener').andCallThrough();
+      });
+
+      it('adds a resize listener and handler if attribute is truthy', function () {
+        var fragment = compileTooltip('<span tooltip="tooltip text" tooltip-resize="true"></span>');
+        fragment.find('span').trigger( 'mouseenter' );
+        expect($window.addEventListener).toHaveBeenCalledWith('resize', jasmine.any(Function));
+      });
+
+      it('does not add a resize listener and handler if attribute is not specified', function () {
+        var fragment = compileTooltip('<span tooltip="tooltip text"></span>');
+        fragment.find('span').trigger( 'mouseenter' );
+        expect($window.addEventListener).not.toHaveBeenCalled();
       });
 
     });
