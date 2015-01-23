@@ -64,7 +64,7 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
    * Returns the actual instance of the $tooltip service.
    * TODO support multiple triggers
    */
-  this.$get = [ '$window', '$compile', '$timeout', '$document', '$position', '$interpolate', function ( $window, $compile, $timeout, $document, $position, $interpolate ) {
+  this.$get = [ '$window', '$compile', '$timeout', '$document', '$position', '$interpolate', '$parse', function ( $window, $compile, $timeout, $document, $position, $interpolate, $parse ) {
     return function $tooltip ( type, prefix, defaultTriggerShow ) {
       var options = angular.extend( {}, defaultOptions, globalOptions );
 
@@ -144,7 +144,9 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
             };
 
             var repositionOnResize = function () {
-              $window.addEventListener('resize', debounce(positionTooltip, 250));
+              var resizeAttributes = $parse(tAttrs.tooltipResize)() || {};
+              var debounceTime = resizeAttributes.debounce || 250;
+              $window.addEventListener('resize', debounce(positionTooltip, debounceTime));
             };
 
             // By default, the tooltip is not open.
@@ -218,7 +220,7 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
               positionTooltip();
 
               // Add resize handler if attr is specified
-              if (tAttrs.tooltipResize) {
+              if ( tAttrs.tooltipResize ) {
                 repositionOnResize();
               }
 
