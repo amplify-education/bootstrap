@@ -116,6 +116,7 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
             var transitionTimeout;
             var popupTimeout;
             var appendToBody = angular.isDefined( options.appendToBody ) ? options.appendToBody : false;
+            var placementBreakpoints = [];
             var triggers = getTriggers( undefined );
             var hasEnableExp = angular.isDefined(attrs[prefix+'Enable']);
             var ttScope = scope.$new(true);
@@ -128,6 +129,11 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
 
               // Now set the calculated positioning.
               tooltip.css( ttPosition );
+            };
+
+            var repositionTooltip = function() {
+              prepPlacement();
+              positionTooltip();
             };
 
             var debounce = function(func, wait) {
@@ -146,7 +152,7 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
             var repositionOnResize = function () {
               var resizeAttributes = $parse(tAttrs.tooltipResize)() || {};
               var debounceTime = resizeAttributes.debounce || 250;
-              $window.addEventListener('resize', debounce(positionTooltip, debounceTime));
+              $window.addEventListener('resize', debounce(repositionTooltip, debounceTime));
             };
 
             // By default, the tooltip is not open.
@@ -303,7 +309,35 @@ angular.module( 'ui.bootstrap.tooltip', [ 'ui.bootstrap.position', 'ui.bootstrap
 
             function prepPlacement() {
               var val = attrs[ prefix + 'Placement' ];
-              ttScope.placement = angular.isDefined( val ) ? val : options.placement;
+              if (val) {
+                var parsed = $parse(val)();
+                val = parsed ? parsed : val;
+              }
+              if (angular.isObject(val) && window.matchMedia) {
+                if (!placementBreakpoints.length) {
+                  var breakpointsInOrder = Object.keys(val).sort(function(a, b) {
+                    a = Number(a);
+                    b = Number(b);
+                    if (a > b) {
+                      return 1;
+                    } else if (a < b) {
+                      return -1;
+                    } else {
+                      return 0;
+                    }
+                  });
+                  breakpointsInOrder.forEach(function(resolution) {
+                    placementBreakpoints.push({resolution : resolution, placement : val[resolution]});
+                  });
+                }
+                for (var i = 0, j = placementBreakpoints.length; i < j; i++) {
+                  if (window.matchMedia('only screen and (max-width: '+placementBreakpoints[i].resolution+'px)').matches) {
+                    return ttScope.placement = placementBreakpoints[i].placement;
+                  }
+                }
+                return ttScope.placement = val['default'];
+              }
+              ttScope.placement = val || options.placement;
             }
 
             function prepPopupDelay() {
